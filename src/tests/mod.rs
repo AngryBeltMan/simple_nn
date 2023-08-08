@@ -10,3 +10,4 @@ pub mod matrix_mult_test;
 pub mod matrix_addition;
 pub mod vector_tests;
 pub mod backprop_test;
+pub mod nn_saving_test;

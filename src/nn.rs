@@ -1,4 +1,5 @@
 use crate::{math::*, nn_activation::ActivationFunc};
+use  serde_derive::{Deserialize, Serialize};
 
 type Weights = Vec<f64>;
 type Layers = Vec<Vec<Weights>>;
@@ -6,7 +7,7 @@ type NodeOutputs = Vec<Vec<f64>>;
 type Biases =  Vec<Vec<f64>>;
 
 /// A simple neural network.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NeuralNetwork {
     layers: Vec<Vec<Weights>>,
     node_outputs: NodeOutputs,
@@ -91,11 +92,13 @@ impl NeuralNetwork {
         }).sum::<f64>() / target.len() as f64
     }
     // returns a list of indexs of items the nn correctly predicted
-    pub fn test_nn(&mut self, data: Vec<Vec<f64>>, target: Vec<Vec<f64>>) -> Vec<usize> {
+    pub fn test_nn<'a,D:'a ,T:'a>(&mut self, data: &'a D, target: &'a T ) -> Vec<usize>
+        where &'a D: Into<&'a Vec<Vec<f64>>>, &'a T: Into<&'a Vec<Vec<f64>>>
+    {
         let mut index = 0;
-        data.iter().zip(&target)
+        data.into().iter().zip(target.into())
             .filter_map(|img| {
-                let prediction = self.evaluate(img.0);
+                let prediction = self.evaluate(&img.0);
                 let correct = if prediction.maximum() == img.1.maximum() {
                     Some(index)
                 } else {
@@ -113,6 +116,7 @@ impl NeuralNetwork {
         scalar_multiplication(&mut weight_change, -learn_rate);
         matrix_addition(&mut self.layers[self.layer_count - 2], &weight_change);
     }
+
     /// Update the biases given the delta value.
     #[inline]
     fn update_biases(&mut self, delta_v: &Vec<f64>, learn_rate: f64) {
@@ -122,6 +126,7 @@ impl NeuralNetwork {
             .zip(&bias_change)
             .map(|b| *b.0 += *b.1).collect::<()>();
     }
+
     /// Train the neural network.
     /// The learn rate determines how fast the nn should learn. The data argument is the list of
     /// input data and the target agument is the expected output for each given data.
